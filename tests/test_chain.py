@@ -1,6 +1,4 @@
 from hashkov.chain import MarkovChain
-
-
 import unittest
 
 
