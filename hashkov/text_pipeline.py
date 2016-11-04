@@ -93,10 +93,13 @@ class PunctuationCleaner(PipelineElement):
     '''
     Cleans up any punctuation in the text
     '''
-    def __init__(self):
-        '''Initialize'''
+    def __init__(self, punctuation=None):
+        '''Initialize. Will take a string of punctuation if given, else will just use
+           string.punctuation'''
         super(PunctuationCleaner, self).__init__()
-        self.translator = str.maketrans('', '', string.punctuation)
+        if punctuation is None:
+            punctuation = string.punctuation
+        self.translator = str.maketrans('', '', punctuation)
 
     def _do_process(self, text):
         '''Clean up the text'''
