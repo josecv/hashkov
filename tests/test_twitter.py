@@ -1,6 +1,6 @@
 from hashkov.twitter import Twitter
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 from urllib import parse
 
 
@@ -29,3 +29,12 @@ class TwitterTest(unittest.TestCase):
         '''
         request_key = 'request_key'
         request_secret = 'request_secret'
+        encoded = parse.urlencode({'oauth_token': request_key,
+                                   'oauth_token_secret': request_secret})
+        r = Mock()
+        r.content = encoded
+        self.requests.post.return_value = r
+        (got_token, got_url) = self.twitter.request_request_token()
+        self.assertEqual(got_token, request_key)
+        self.requests.post.assert_called_once_with(url=ANY,
+                                                   auth=self.oauth_object)
