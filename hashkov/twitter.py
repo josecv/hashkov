@@ -1,10 +1,23 @@
 '''
 Communicates with twitter.
 '''
-import json
 import requests as req_module
 from requests_oauthlib import OAuth1
 from urllib import parse
+
+
+class TwitterException(Exception):
+    '''
+    An exception in case something goes wrong.
+    '''
+
+    def __init__(self, response):
+        '''
+        Initialize the exception with the response given.
+        '''
+        super(TwitterException, self).__init__("Twitter error %d: %s" %
+                                               (response.status_code,
+                                                response.text))
 
 
 class Twitter(object):
@@ -15,6 +28,8 @@ class Twitter(object):
     request_token_url = 'https://api.twitter.com/oauth/request_token'
     authorize_url = 'https://api.twitter.com/oauth/authorize'
     access_token_url = 'https://api.twitter.com/oauth/access_token'
+    tweet_url = 'https://api.twitter.com/1.1/statuses/update.json'
+    search_url = 'https://api.twitter.com/1.1/search/tweets.json'
 
     def __init__(self, app_key, app_secret, requests=None, oauth_class=None):
         '''
@@ -73,11 +88,22 @@ class Twitter(object):
     def search_by_hashtag(self, hashtag):
         '''
         Search tweets by hashtag.
+        Return a list of tweets.
         '''
-        pass
+        payload = {'q': hashtag}
+        r = self.requests.get(self.search_url, auth=self.oauth, params=payload)
+        if r.status_code != 200:
+            raise TwitterException(r)
+        results = r.json()['statuses']
+        results = [i['text'] for i in results]
+        return results
 
     def tweet(self, tweet):
         '''
         Tweet something.
         '''
-        pass
+        payload = {'status': tweet}
+        # It seems that this is passed in through the url
+        r = self.requests.post(self.tweet_url, auth=self.oauth, params=payload)
+        if r.status_code != 200:
+            raise TwitterException(r)

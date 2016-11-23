@@ -1,7 +1,9 @@
-from hashkov.twitter import Twitter
+from hashkov.twitter import Twitter, TwitterException
 import unittest
 from unittest.mock import Mock, ANY
 from urllib import parse
+import os
+import json
 
 
 class TwitterTest(unittest.TestCase):
@@ -17,6 +19,9 @@ class TwitterTest(unittest.TestCase):
     pin = 'pin'
 
     def setUp(self):
+        '''
+        Set up the test.
+        '''
         self.requests = Mock()
         self.oauth_class = Mock()
         self.oauth_object = Mock()
@@ -77,3 +82,36 @@ class TwitterTest(unittest.TestCase):
                 client_secret=self.app_secret,
                 resource_owner_key=self.access_key,
                 resource_owner_secret=self.access_secret)
+
+    def test_search_by_hashtag(self):
+        '''
+        Test the search method.
+        '''
+        json_path = os.path.join(os.path.dirname(__file__), 'resources',
+                                 'search_results.json')
+        with open(json_path, 'r') as f:
+            text = ''.join(f.readlines())
+        r = Mock()
+        r.status_code = 200
+        r.text = text
+        r.json.return_value = json.loads(text)
+        self.requests.get.return_value = r
+        expected = ['Aggressive Ponytail #freebandnames',
+                    'Thee Namaste Nerdz. #FreeBandNames',
+                    'Mexican Heaven, Mexican Hell #freebandnames',
+                    'The Foolish Mortals #freebandnames']
+        results = self.twitter.search_by_hashtag('#freebandnames')
+        self.assertEquals(expected, results)
+
+    def test_search_by_hashtag_error(self):
+        '''
+        Test the search method, when twitter returns an error.
+        '''
+        r = Mock()
+        r.status_code = 401
+        self.requests.get.return_value = r
+        try:
+            self.twitter.search_by_hashtag('#WhyTho')
+            self.fail('Did not throw on http error')
+        except TwitterException:
+            pass
