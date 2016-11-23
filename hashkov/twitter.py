@@ -57,7 +57,7 @@ class Twitter(object):
         r = self.requests.post(url=self.access_token_url, auth=self.oauth)
         credentials = parse.parse_qs(r.content)
         access_key = credentials.get('oauth_token')[0]
-        access_secret = credentials.get('oauth_secret')[0]
+        access_secret = credentials.get('oauth_token_secret')[0]
         self.set_access_token(access_key, access_secret)
         return (access_key, access_secret)
 
