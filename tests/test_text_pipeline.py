@@ -46,3 +46,24 @@ class TextPipelineTest(unittest.TestCase):
          attach_next(text_pipeline.Tokenizer(2)))
         result = cleaner.process(text)
         self.assertEqual(result, expected)
+
+    def test_mention_cleaner(self):
+        '''
+        Test that we can remove @mentions from text.
+        '''
+        text = "Hello @otheruser i'm mentioning you"
+        expected = "Hello i'm mentioning you"
+        cleaner = text_pipeline.MentionCleaner()
+        cleaner.attach_next(text_pipeline.WhitespaceCleaner())
+        result = cleaner.process(text)
+        self.assertEqual(result, expected)
+
+    def test_replacer(self):
+        '''
+        Test the replacer element.
+        '''
+        text = "Text #with #hashtags we don't #want"
+        expected = "Text $with $hashtags we don't $want"
+        cleaner = text_pipeline.Replacer('#', '$')
+        result = cleaner.process(text)
+        self.assertEqual(result, expected)

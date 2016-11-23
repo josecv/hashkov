@@ -8,5 +8,5 @@ setup(name='Hashkov',
       author='Jose Cortes-Varela',
       url='https://www.github.com/josecv/hashkov',
       packages=['hashkov'],
-      scripts=['scripts/hashkov_tweet'],
+      scripts=['scripts/hashkov_tweet.py'],
       )

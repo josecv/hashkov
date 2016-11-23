@@ -106,6 +106,35 @@ class PunctuationCleaner(PipelineElement):
         return text.translate(self.translator)
 
 
+class MentionCleaner(PipelineElement):
+    '''
+    Removes any @mentions from a piece of text
+    '''
+    def __init__(self):
+        '''Initialize.'''
+        super(MentionCleaner, self).__init__()
+        self.regex = re.compile(r'@\w+')
+
+    def _do_process(self, text):
+        '''Clean up the text'''
+        return self.regex.sub('', text)
+
+
+class Replacer(PipelineElement):
+    '''
+    Replaces any one character by any other character.
+    '''
+    def __init__(self, old, new):
+        '''Initialize'''
+        super(Replacer, self).__init__()
+        self.old = old
+        self.new = new
+
+    def _do_process(self, text):
+        '''Clean up the text'''
+        return text.replace(self.old, self.new)
+
+
 class Tokenizer(PipelineElement):
     '''
     Tokenizes the input.
