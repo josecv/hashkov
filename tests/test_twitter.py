@@ -100,7 +100,10 @@ class TwitterTest(unittest.TestCase):
                     'Thee Namaste Nerdz. #FreeBandNames',
                     'Mexican Heaven, Mexican Hell #freebandnames',
                     'The Foolish Mortals #freebandnames']
-        results = self.twitter.search_by_hashtag('#freebandnames')
+        q = '#freebandnames'
+        results = self.twitter.search_by_hashtag(q)
+        self.requests.get.assert_called_once_with(ANY, auth=ANY,
+                                                  params={'q': q})
         self.assertEquals(expected, results)
 
     def test_search_by_hashtag_error(self):
@@ -112,6 +115,31 @@ class TwitterTest(unittest.TestCase):
         self.requests.get.return_value = r
         try:
             self.twitter.search_by_hashtag('#WhyTho')
+            self.fail('Did not throw on http error')
+        except TwitterException:
+            pass
+
+    def test_tweet(self):
+        '''
+        Test the tweet method
+        '''
+        tweet = 'Test tweet please ignore'
+        r = Mock()
+        r.status_code = 200
+        self.requests.post.return_value = r
+        self.twitter.tweet(tweet)
+        self.requests.post.assert_called_once_with(ANY, auth=ANY,
+                                                   params={'status': tweet})
+
+    def test_tweet_error(self):
+        '''
+        Test the tweet method when there's an error.
+        '''
+        r = Mock()
+        r.status_code = 401
+        self.requests.post.return_value = r
+        try:
+            self.twitter.tweet('Test tweet please ignore')
             self.fail('Did not throw on http error')
         except TwitterException:
             pass
