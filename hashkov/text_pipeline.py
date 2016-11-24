@@ -120,19 +120,20 @@ class MentionCleaner(PipelineElement):
         return self.regex.sub('', text)
 
 
-class Replacer(PipelineElement):
+class HashtagCleaner(PipelineElement):
     '''
-    Replaces any one character by any other character.
+    Turns hashtags into more kosher automatable versions.
+    This is because it's forbidden to have a robot tweet to trending topics.
     '''
-    def __init__(self, old, new):
+    def __init__(self):
         '''Initialize'''
-        super(Replacer, self).__init__()
-        self.old = old
-        self.new = new
+        super(HashtagCleaner, self).__init__()
+        self.regex = re.compile(r'(\s+|^)#(([^%s0-9\s][_\w]*)|([_]\w+))' %
+                                string.punctuation)
 
     def _do_process(self, text):
         '''Clean up the text'''
-        return text.replace(self.old, self.new)
+        return self.regex.sub(r'\1#_\2', text)
 
 
 class Tokenizer(PipelineElement):

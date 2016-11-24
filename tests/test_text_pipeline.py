@@ -62,8 +62,12 @@ class TextPipelineTest(unittest.TestCase):
         '''
         Test the replacer element.
         '''
-        text = "Text #with #hashtags we don't #want"
-        expected = "Text $with $hashtags we don't $want"
-        cleaner = text_pipeline.Replacer('#', '$')
+        text = "#Text #with #hashtags we don't #_want #pony2012"
+        expected = "#_Text #_with #_hashtags we don't #__want #_pony2012"
+        cleaner = text_pipeline.HashtagCleaner()
+        result = cleaner.process(text)
+        self.assertEqual(result, expected)
+        text = "We are # 1 #$notAHashtag #!orThis #123 #123abc middle#hash"
+        expected = text
         result = cleaner.process(text)
         self.assertEqual(result, expected)
