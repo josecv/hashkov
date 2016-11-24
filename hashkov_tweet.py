@@ -57,7 +57,7 @@ def main():
         if len(' '.join(result)) + len(token) < 140:
             result.append(token)
     tweet = ' '.join(result)
-    #twitter.tweet(tweet)
+    twitter.tweet(tweet)
     print("I Tweeted: %s" % tweet)
     return 0
 
