@@ -106,7 +106,6 @@ class TwitterTest(unittest.TestCase):
                                                   params={'q': q})
         self.assertEquals(expected, results)
 
-
     def test_search_by_hashtag_no_pound(self):
         '''
         Test the search method, when the hashtag doesn't have a #hash.
@@ -181,6 +180,8 @@ class TwitterTest(unittest.TestCase):
 
         q = 'freebandnames'
         results = self.twitter.search_by_hashtag(q, 3)
+        self.assertEqual(expected, results)
+
         class ContainsNextPage(str):
             '''To check whether the next_results stuff is given'''
             def __eq__(self, other):
@@ -204,6 +205,25 @@ class TwitterTest(unittest.TestCase):
             self.fail('Did not throw on http error')
         except TwitterException:
             pass
+
+    def test_get_trending(self):
+        '''
+        Test the get_trending method.
+        '''
+        json_path = os.path.join(os.path.dirname(__file__), 'resources',
+                                 'trends_results.json')
+        with open(json_path, 'r') as f:
+            text = ''.join(f.readlines())
+        r = Mock()
+        r.status_code = 200
+        r.json.return_value = json.loads(text)
+        self.requests.get.return_value = r
+        expected = ['#GanaPuntosSi', '#WordsThatDescribeMe',
+                    '#10PersonasQueExtra\u00f1oMucho']
+        results = self.twitter.get_trending(10)
+        self.assertEqual(expected, results)
+        self.requests.get.assert_called_once_with(ANY, auth=ANY,
+                                                  params={'id': 10})
 
     def test_tweet(self):
         '''

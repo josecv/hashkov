@@ -4,6 +4,7 @@ Communicates with twitter.
 import requests as req_module
 from requests_oauthlib import OAuth1
 from urllib import parse
+from hashkov.text_pipeline import flatten
 
 
 class TwitterException(Exception):
@@ -30,6 +31,7 @@ class Twitter(object):
     access_token_url = 'https://api.twitter.com/oauth/access_token'
     tweet_url = 'https://api.twitter.com/1.1/statuses/update.json'
     search_url = 'https://api.twitter.com/1.1/search/tweets.json'
+    trends_url = 'https://api.twitter.com/1.1/trends/place.json'
 
     def __init__(self, app_key, app_secret, requests=None, oauth_class=None):
         '''
@@ -95,22 +97,35 @@ class Twitter(object):
         payload = {'q': hashtag}
         if lang is not None:
             payload['l'] = lang
-        r = self.requests.get(self.search_url, auth=self.oauth, params=payload)
-        if r.status_code != 200:
-            raise TwitterException(r)
+        r = self._request('get', self.search_url, auth=self.oauth,
+                          params=payload)
         json = r.json()
         results = json['statuses']
         results = [i['text'] for i in results]
         for page in range(1, pages):
-            if not 'next_results' in json['search_metadata']:
+            if 'next_results' not in json['search_metadata']:
                 break
             next_page = json['search_metadata']['next_results']
-            r = self.requests.get(self.search_url + next_page, auth=self.oauth)
-            if r.status_code != 200:
-                raise TwitterException(r)
+            r = self._request('get', self.search_url + next_page,
+                              auth=self.oauth)
             json = r.json()
             results.extend(i['text'] for i in json['statuses'])
         return results
+
+    def get_trending(self, woeid):
+        '''
+        Get a list of trending hashtags for the place with the woeid given.
+        '''
+        payload = {'id': woeid}
+        r = self._request('get', self.trends_url, auth=self.oauth,
+                          params=payload)
+        json = r.json()
+        trends = [t['trends'] for t in json]
+        trends = flatten(trends)
+        trends = [t['name'] for t in trends]
+        # Not intereted in non hashtag topics
+        trends = [t for t in trends if t.startswith('#')]
+        return trends
 
     def tweet(self, tweet):
         '''
@@ -118,6 +133,16 @@ class Twitter(object):
         '''
         payload = {'status': tweet}
         # It seems that this is passed in through the url
-        r = self.requests.post(self.tweet_url, auth=self.oauth, params=payload)
+        self._request('post', self.tweet_url, auth=self.oauth, params=payload)
+
+    def _request(self, verb, *args, **kwargs):
+        '''
+        Do a verb request (POST or GET) with the args specified.
+        Fail if it doesn't come back as 200.
+        Else return the result.
+        '''
+        verb = verb.lower()
+        r = getattr(self.requests, verb)(*args, **kwargs)
         if r.status_code != 200:
             raise TwitterException(r)
+        return r
