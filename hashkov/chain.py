@@ -23,7 +23,7 @@ class MarkovChain(object):
         for sample in samples:
             prev = ''  # The start
             for token in sample:
-                prev_mem = self.memory.setdefault(prev, [])
+                prev_mem = self.memory.setdefault(prev.lower(), [])
                 prev_mem.append(token)
                 prev = token
 
@@ -34,7 +34,7 @@ class MarkovChain(object):
         def inner_sample(length, token):
             if not length:
                 return [token]
-            token_mem = self.memory.get(token)
+            token_mem = self.memory.get(token.lower())
             if token_mem is None or len(token_mem) == 0:
                 return [token]  # Chain's over folks
             next_token = random.choice(token_mem)
