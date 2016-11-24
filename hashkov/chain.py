@@ -39,3 +39,12 @@ class MarkovChain(object):
             return [start_token]  # Chain's over folks
         next_token = random.choice(token_mem)
         return [start_token] + self.sample(length - 1, next_token)
+
+    def get_possible_starts(self):
+        '''
+        Return the keys of the memory, thus the possible starting
+        tokens.
+        Note that these are always in lowercase because of implementation
+        details.
+        '''
+        return self.memory.keys()

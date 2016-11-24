@@ -9,18 +9,6 @@ import pickle
 import random
 
 
-def build_pipeline():
-    '''
-    Build a text pipeline.
-    '''
-    pipeline = text_pipeline.HashtagCleaner()
-    (pipeline.attach_next(text_pipeline.MentionCleaner())
-             .attach_next(text_pipeline.UrlCleaner())
-             .attach_next(text_pipeline.WhitespaceCleaner())
-             .attach_next(text_pipeline.Tokenizer(1)))
-    return pipeline
-
-
 def get_argument_parser():
     '''
     Build and return an argument parser.
@@ -43,6 +31,12 @@ def get_argument_parser():
     parser.add_argument('-w', '--woeid', dest='woeid', default=4118, type=int,
                         help='For use with -d. The woeid that the trending'
                         ' hashtag should be from')
+    parser.add_argument('-f', '--force', dest='force', action='store_true',
+                        help='Force the hashtag to appear in the tweet '
+                             '(by starting it off with it)')
+    parser.add_argument('-n', '--ngram', dest='ngram', default=2, type=int,
+                        help='How many words to consider as a token.'
+                             ' Default 2')
     hashtag_parser = parser.add_mutually_exclusive_group(required=True)
     hashtag_parser.add_argument('-t', '--hashtag', dest='hashtag',
                                 help='The hashtag to tweet to')
@@ -50,6 +44,18 @@ def get_argument_parser():
                                 help='Whether to run in autonomous mode.'
                                 ' Incompatible with -t', action='store_true')
     return parser
+
+
+def build_pipeline(opts):
+    '''
+    Build a text pipeline.
+    '''
+    pipeline = text_pipeline.HashtagCleaner()
+    (pipeline.attach_next(text_pipeline.MentionCleaner())
+             .attach_next(text_pipeline.UrlCleaner())
+             .attach_next(text_pipeline.WhitespaceCleaner())
+             .attach_next(text_pipeline.Tokenizer(opts.ngram)))
+    return pipeline
 
 
 def get_chain(opts):
@@ -83,6 +89,24 @@ def get_hashtag(twitter, opts):
         return random.choice(trending)
     return opts.hashtag
 
+def generate_tweet(chain, opts, hashtag):
+    start = ''
+    if opts.force:
+        if not hashtag.startswith('#'):
+            hashtag = '#' + hashtag
+        hashtag = hashtag.replace('#', '#_').lower()
+        keys = chain.get_possible_starts()
+        keys = [k for k in keys if hashtag in k]
+        start = random.choice(keys)
+    # 40 words should be more than enough to get us a nice tweet
+    tweet = chain.sample(20, start)
+    result = []
+    for token in tweet:
+        if len(' '.join(result)) + len(token) < 140:
+            result.append(token)
+    tweet = ' '.join(result)
+    return tweet
+
 
 def main():
     parser = get_argument_parser()
@@ -101,18 +125,14 @@ def main():
     if hashtag is None:
         print('Could not decide on a hashtag. Will now quit')
         return 1
+    print("Tweeting to %s" % hashtag)
     tweets = twitter.search_by_hashtag(hashtag, 10, opts.lang)
-    pipeline = build_pipeline()
+    pipeline = build_pipeline(opts)
     tweets = [pipeline.process(tweet) for tweet in tweets]
     chain = get_chain(opts)
     chain.train(tweets)
-    # 40 words should be more than enough to get us a nice tweet
-    tweet = chain.sample(20)
-    result = []
-    for token in tweet:
-        if len(' '.join(result)) + len(token) < 140:
-            result.append(token)
-    tweet = ' '.join(result)
+    start = ''
+    tweet = generate_tweet(chain, opts, hashtag)
     twitter.tweet(tweet)
     print("I Tweeted: %s" % tweet)
     save_chain(chain, opts)
