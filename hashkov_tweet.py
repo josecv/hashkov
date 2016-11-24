@@ -10,14 +10,18 @@ def build_pipeline():
     '''
     Build a text pipeline.
     '''
-    pipeline = text_pipeline.WhitespaceCleaner()
+    pipeline = text_pipeline.HashtagCleaner()
     (pipeline.attach_next(text_pipeline.MentionCleaner())
-             .attach_next(text_pipeline.HashtagCleaner())
+             .attach_next(text_pipeline.UrlCleaner())
+             .attach_next(text_pipeline.WhitespaceCleaner())
              .attach_next(text_pipeline.Tokenizer(1)))
     return pipeline
 
 
-def main():
+def get_argument_parser():
+    '''
+    Build and return an argument parser.
+    '''
     parser = ArgumentParser(description='Tweet Markov chain generated tweets.'
                                         ' See README.md for more')
     parser.add_argument('-t', '--hashtag', dest='hashtag',
@@ -30,6 +34,11 @@ def main():
                         help='The access token')
     parser.add_argument('-s', '--access-secret', dest='access_secret',
                         help='The access secret')
+    return parser
+
+
+def main():
+    parser = get_argument_parser()
     opts = parser.parse_args()
     if any([getattr(opts, i) is None for i in
             ['hashtag', 'app_key', 'app_secret']]):
@@ -57,7 +66,7 @@ def main():
         if len(' '.join(result)) + len(token) < 140:
             result.append(token)
     tweet = ' '.join(result)
-    twitter.tweet(tweet)
+    #twitter.tweet(tweet)
     print("I Tweeted: %s" % tweet)
     return 0
 

@@ -11,7 +11,7 @@ You do need to register a Twitter app for this to work. Once that's done, you ca
 ./hashkov_tweet.py -t <HASHTAG> -a <APP_KEY> -c <APP_SECRET>
 ```
 
-It will give you a url so that you can request an access token, then print out said token.
+It will give you a url so that you can request a pin for hashkov to get an access token, then print out said token.
 Once you do have the token, future invocations can be done as:
 
 ```
