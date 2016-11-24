@@ -52,7 +52,7 @@ class Twitter(object):
         and the url that the user should visit to get the pin.
         '''
         r = self.requests.post(url=self.request_token_url, auth=self.oauth)
-        credentials = parse.parse_qs(r.content)
+        credentials = parse.parse_qs(r.content.decode('utf-8'))
         self.req_key = credentials.get('oauth_token')[0]
         self.req_secret = credentials.get('oauth_token_secret')[0]
         url = '%s?oauth_token=%s' % (self.authorize_url, self.req_key)
@@ -70,7 +70,7 @@ class Twitter(object):
                                       resource_owner_secret=self.req_secret,
                                       verifier=pin)
         r = self.requests.post(url=self.access_token_url, auth=self.oauth)
-        credentials = parse.parse_qs(r.content)
+        credentials = parse.parse_qs(r.content.decode('utf-8'))
         access_key = credentials.get('oauth_token')[0]
         access_secret = credentials.get('oauth_token_secret')[0]
         self.set_access_token(access_key, access_secret)

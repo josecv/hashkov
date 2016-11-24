@@ -43,7 +43,7 @@ class TwitterTest(unittest.TestCase):
         encoded = parse.urlencode({'oauth_token': self.request_key,
                                    'oauth_token_secret': self.request_secret})
         r = Mock()
-        r.content = encoded
+        r.content = bytearray(encoded, 'utf-8')
         self.requests.post.return_value = r
         (got_token, got_url) = self.twitter.request_request_token()
         self.assertEqual(got_token, self.request_key)
@@ -57,12 +57,12 @@ class TwitterTest(unittest.TestCase):
         encoded = parse.urlencode({'oauth_token': self.request_key,
                                    'oauth_token_secret': self.request_secret})
         r = Mock()
-        r.content = encoded
+        r.content = bytearray(encoded, 'utf-8')
         self.requests.post.return_value = r
         self.twitter.request_request_token()
         encoded = parse.urlencode({'oauth_token': self.access_key,
                                    'oauth_token_secret': self.access_secret})
-        r.content = encoded
+        r.content = bytearray(encoded, 'utf-8')
         self.oauth_class.reset_mock()
         self.requests.post.reset_mock()
         (access_key, access_secret) = (self.twitter.
