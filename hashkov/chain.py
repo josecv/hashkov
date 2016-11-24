@@ -27,16 +27,15 @@ class MarkovChain(object):
                 prev_mem.append(token)
                 prev = token
 
-    def sample(self, length):
+    def sample(self, length, start_token=''):
         '''
         Sample the chain, returning a list of tokens of the length given.
+        Optionally, force it to start with the token given.
         '''
-        def inner_sample(length, token):
-            if not length:
-                return [token]
-            token_mem = self.memory.get(token.lower())
-            if token_mem is None or len(token_mem) == 0:
-                return [token]  # Chain's over folks
-            next_token = random.choice(token_mem)
-            return [token] + inner_sample(length - 1, next_token)
-        return inner_sample(length, '')
+        if not length:
+            return [start_token]
+        token_mem = self.memory.get(start_token.lower())
+        if token_mem is None or len(token_mem) == 0:
+            return [start_token]  # Chain's over folks
+        next_token = random.choice(token_mem)
+        return [start_token] + self.sample(length - 1, next_token)

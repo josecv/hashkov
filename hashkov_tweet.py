@@ -4,6 +4,8 @@ import sys
 from hashkov.twitter import Twitter
 from hashkov.chain import MarkovChain
 from hashkov import text_pipeline
+import os
+import pickle
 
 
 def build_pipeline():
@@ -34,7 +36,32 @@ def get_argument_parser():
                         help='The access token')
     parser.add_argument('-s', '--access-secret', dest='access_secret',
                         help='The access secret')
+    parser.add_argument('-l', '--lang', dest='lang',
+                        help='The language to tweet in', default='en')
+    parser.add_argument('-p', '--pickle', dest='pickle', default=None,
+                        help='Optionally, somewhere to save the chain '
+                             'so that it does better next time')
     return parser
+
+
+def get_chain(opts):
+    '''
+    Build or unpickle the markov chain.
+    '''
+    if opts.pickle is not None and os.path.isfile(opts.pickle):
+        with open(opts.pickle, 'rb') as f:
+            chain = pickle.load(f)
+        return chain
+    return MarkovChain()
+
+
+def save_chain(chain, opts):
+    '''
+    Pickle the markov chain given, if desired
+    '''
+    if opts.pickle is not None:
+        with open(opts.pickle, 'wb') as f:
+            pickle.dump(chain, f)
 
 
 def main():
@@ -54,10 +81,10 @@ def main():
         print("Your access token is:\nKey: %s\nSecret: %s\n" % (key, secret))
     else:
         twitter.set_access_token(opts.access_token, opts.access_secret)
-    tweets = twitter.search_by_hashtag(opts.hashtag, 10)
+    tweets = twitter.search_by_hashtag(opts.hashtag, 10, opts.lang)
     pipeline = build_pipeline()
     tweets = [pipeline.process(tweet) for tweet in tweets]
-    chain = MarkovChain()
+    chain = get_chain(opts)
     chain.train(tweets)
     # 40 words should be more than enough to get us a nice tweet
     tweet = chain.sample(20)
@@ -66,8 +93,9 @@ def main():
         if len(' '.join(result)) + len(token) < 140:
             result.append(token)
     tweet = ' '.join(result)
-    #twitter.tweet(tweet)
+    # twitter.tweet(tweet)
     print("I Tweeted: %s" % tweet)
+    save_chain(chain, opts)
     return 0
 
 if __name__ == '__main__':

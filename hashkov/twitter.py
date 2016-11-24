@@ -85,7 +85,7 @@ class Twitter(object):
                                       resource_owner_key=key,
                                       resource_owner_secret=secret)
 
-    def search_by_hashtag(self, hashtag, pages=1):
+    def search_by_hashtag(self, hashtag, pages=1, lang=None):
         '''
         Search tweets by hashtag.
         Return a list of tweets.
@@ -93,6 +93,8 @@ class Twitter(object):
         if not hashtag.startswith('#'):
             hashtag = '#' + hashtag
         payload = {'q': hashtag}
+        if lang is not None:
+            payload['l'] = lang
         r = self.requests.get(self.search_url, auth=self.oauth, params=payload)
         if r.status_code != 200:
             raise TwitterException(r)

@@ -130,6 +130,29 @@ class TwitterTest(unittest.TestCase):
                                                   params={'q': '#' + q})
         self.assertEquals(expected, results)
 
+    def test_search_by_hashtag_lang(self):
+        '''
+        Test the search method with a language.
+        '''
+        json_path = os.path.join(os.path.dirname(__file__), 'resources',
+                                 'search_results.json')
+        with open(json_path, 'r') as f:
+            text = ''.join(f.readlines())
+        r = Mock()
+        r.status_code = 200
+        r.text = text
+        r.json.return_value = json.loads(text)
+        self.requests.get.return_value = r
+        expected = ['Aggressive Ponytail #freebandnames',
+                    'Thee Namaste Nerdz. #FreeBandNames',
+                    'Mexican Heaven, Mexican Hell #freebandnames',
+                    'The Foolish Mortals #freebandnames']
+        q = '#freebandnames'
+        results = self.twitter.search_by_hashtag(q, 1, 'en')
+        self.requests.get.assert_called_once_with(ANY, auth=ANY,
+                                                  params={'q': q, 'l': 'en'})
+        self.assertEquals(expected, results)
+
     def test_search_by_hashtag_paginated(self):
         '''
         Test the search method with pagination.
