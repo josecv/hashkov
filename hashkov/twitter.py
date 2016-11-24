@@ -85,17 +85,29 @@ class Twitter(object):
                                       resource_owner_key=key,
                                       resource_owner_secret=secret)
 
-    def search_by_hashtag(self, hashtag):
+    def search_by_hashtag(self, hashtag, pages=1):
         '''
         Search tweets by hashtag.
         Return a list of tweets.
         '''
+        if not hashtag.startswith('#'):
+            hashtag = '#' + hashtag
         payload = {'q': hashtag}
         r = self.requests.get(self.search_url, auth=self.oauth, params=payload)
         if r.status_code != 200:
             raise TwitterException(r)
-        results = r.json()['statuses']
+        json = r.json()
+        results = json['statuses']
         results = [i['text'] for i in results]
+        for page in range(1, pages):
+            if not 'next_results' in json['search_metadata']:
+                break
+            next_page = json['search_metadata']['next_results']
+            r = self.requests.get(self.search_url + next_page, auth=self.oauth)
+            if r.status_code != 200:
+                raise TwitterException(r)
+            json = r.json()
+            results.extend(i['text'] for i in json['statuses'])
         return results
 
     def tweet(self, tweet):

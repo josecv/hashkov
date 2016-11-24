@@ -1,6 +1,6 @@
 from hashkov.twitter import Twitter, TwitterException
 import unittest
-from unittest.mock import Mock, ANY
+from unittest.mock import Mock, ANY, call
 from urllib import parse
 import os
 import json
@@ -105,6 +105,69 @@ class TwitterTest(unittest.TestCase):
         self.requests.get.assert_called_once_with(ANY, auth=ANY,
                                                   params={'q': q})
         self.assertEquals(expected, results)
+
+
+    def test_search_by_hashtag_no_pound(self):
+        '''
+        Test the search method, when the hashtag doesn't have a #hash.
+        '''
+        json_path = os.path.join(os.path.dirname(__file__), 'resources',
+                                 'search_results.json')
+        with open(json_path, 'r') as f:
+            text = ''.join(f.readlines())
+        r = Mock()
+        r.status_code = 200
+        r.text = text
+        r.json.return_value = json.loads(text)
+        self.requests.get.return_value = r
+        expected = ['Aggressive Ponytail #freebandnames',
+                    'Thee Namaste Nerdz. #FreeBandNames',
+                    'Mexican Heaven, Mexican Hell #freebandnames',
+                    'The Foolish Mortals #freebandnames']
+        q = 'freebandnames'
+        results = self.twitter.search_by_hashtag(q)
+        self.requests.get.assert_called_once_with(ANY, auth=ANY,
+                                                  params={'q': '#' + q})
+        self.assertEquals(expected, results)
+
+    def test_search_by_hashtag_paginated(self):
+        '''
+        Test the search method with pagination.
+        '''
+        json_path = os.path.join(os.path.dirname(__file__), 'resources',
+                                 'search_results.json')
+        with open(json_path, 'r') as f:
+            text = ''.join(f.readlines())
+        r = Mock()
+        r.status_code = 200
+        r.text = text
+        r.json.return_value = json.loads(text)
+        self.requests.get.return_value = r
+        expected = ['Aggressive Ponytail #freebandnames',
+                    'Thee Namaste Nerdz. #FreeBandNames',
+                    'Mexican Heaven, Mexican Hell #freebandnames',
+                    'The Foolish Mortals #freebandnames',
+                    'Aggressive Ponytail #freebandnames',
+                    'Thee Namaste Nerdz. #FreeBandNames',
+                    'Mexican Heaven, Mexican Hell #freebandnames',
+                    'The Foolish Mortals #freebandnames',
+                    'Aggressive Ponytail #freebandnames',
+                    'Thee Namaste Nerdz. #FreeBandNames',
+                    'Mexican Heaven, Mexican Hell #freebandnames',
+                    'The Foolish Mortals #freebandnames']
+
+        q = 'freebandnames'
+        results = self.twitter.search_by_hashtag(q, 3)
+        class ContainsNextPage(str):
+            '''To check whether the next_results stuff is given'''
+            def __eq__(self, other):
+                return other.endswith("?max_id=249279667666817023&"
+                                      "q=%23freebandnames&count=4&"
+                                      "include_entities=1&result_type=mixed")
+        calls = [call(ANY, auth=ANY, params={'q': '#' + q}),
+                 call(ContainsNextPage(), auth=ANY),
+                 call(ContainsNextPage(), auth=ANY)]
+        self.requests.get.assert_has_calls(calls, any_order=True)
 
     def test_search_by_hashtag_error(self):
         '''

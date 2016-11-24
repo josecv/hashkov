@@ -13,7 +13,7 @@ def build_pipeline():
     pipeline = text_pipeline.WhitespaceCleaner()
     (pipeline.attach_next(text_pipeline.MentionCleaner())
              .attach_next(text_pipeline.HashtagCleaner())
-             .attach_next(text_pipeline.Tokenizer(2)))
+             .attach_next(text_pipeline.Tokenizer(1)))
     return pipeline
 
 
@@ -45,7 +45,7 @@ def main():
         print("Your access token is:\nKey: %s\nSecret: %s\n" % (key, secret))
     else:
         twitter.set_access_token(opts.access_token, opts.access_secret)
-    tweets = twitter.search_by_hashtag(opts.hashtag)
+    tweets = twitter.search_by_hashtag(opts.hashtag, 10)
     pipeline = build_pipeline()
     tweets = [pipeline.process(tweet) for tweet in tweets]
     chain = MarkovChain()
@@ -53,11 +53,11 @@ def main():
     # 40 words should be more than enough to get us a nice tweet
     tweet = chain.sample(20)
     result = []
-    for pair in tweet:
-        if len(' '.join(result)) + len(pair) < 140:
-            result.append(pair)
+    for token in tweet:
+        if len(' '.join(result)) + len(token) < 140:
+            result.append(token)
     tweet = ' '.join(result)
-    twitter.tweet(tweet)
+    #twitter.tweet(tweet)
     print("I Tweeted: %s" % tweet)
     return 0
 
