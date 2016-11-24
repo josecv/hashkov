@@ -136,6 +136,26 @@ class HashtagCleaner(PipelineElement):
         return self.regex.sub(r'\1#_\2', text)
 
 
+class UrlCleaner(PipelineElement):
+    '''
+    Removes urls from the text.
+    '''
+    def __init__(self):
+        '''Initialize'''
+        super(UrlCleaner, self).__init__()
+        # This is the regex from https://gist.github.com/gruber/249502 by
+        # John Gruber. What a hero.
+        pattern = (r'(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|'
+                   r'[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|'
+                   r'(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))'
+                   r'*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))')
+        self.regex = re.compile(pattern)
+
+    def _do_process(self, text):
+        '''Process the text.'''
+        return self.regex.sub('', text)
+
+
 class Tokenizer(PipelineElement):
     '''
     Tokenizes the input.

@@ -71,3 +71,19 @@ class TextPipelineTest(unittest.TestCase):
         expected = text
         result = cleaner.process(text)
         self.assertEqual(result, expected)
+
+    def test_url_cleaner(self):
+        '''
+        Test the url cleaner.
+        It uses a regex developed by John Gruber at
+        http://daringfireball.net/2010/07/improved_regex_for_matching_urls
+        which is all the rage for url matching, so this test isn't
+        as heavy as it would be for something I wrote myself.
+        '''
+        text = ('text with http://www.twitter.com/ a few '
+                'https://en.wikipedia.org/wiki/Twitter urls')
+        expected = 'text with a few urls'
+        cleaner = text_pipeline.UrlCleaner()
+        cleaner.attach_next(text_pipeline.WhitespaceCleaner())
+        result = cleaner.process(text)
+        self.assertEqual(result, expected)
