@@ -6,6 +6,7 @@ from hashkov.chain import MarkovChain
 from hashkov import text_pipeline
 import os
 import pickle
+import random
 
 
 def build_pipeline():
@@ -26,12 +27,10 @@ def get_argument_parser():
     '''
     parser = ArgumentParser(description='Tweet Markov chain generated tweets.'
                                         ' See README.md for more')
-    parser.add_argument('-t', '--hashtag', dest='hashtag',
-                        help='The hashtag to tweet to')
     parser.add_argument('-a', '--app-key', dest='app_key',
-                        help='The app key')
+                        help='The app key', required=True)
     parser.add_argument('-c', '--app-secret', dest='app_secret',
-                        help='The app secret')
+                        help='The app secret', required=True)
     parser.add_argument('-k', '--access-token', dest='access_token',
                         help='The access token')
     parser.add_argument('-s', '--access-secret', dest='access_secret',
@@ -39,8 +38,17 @@ def get_argument_parser():
     parser.add_argument('-l', '--lang', dest='lang',
                         help='The language to tweet in', default='en')
     parser.add_argument('-p', '--pickle', dest='pickle', default=None,
-                        help='Optionally, somewhere to save the chain '
+                        help='Optionally, a file to save the chain '
                              'so that it does better next time')
+    parser.add_argument('-w', '--woeid', dest='woeid', default=4118, type=int,
+                        help='For use with -d. The woeid that the trending'
+                        ' hashtag should be from')
+    hashtag_parser = parser.add_mutually_exclusive_group(required=True)
+    hashtag_parser.add_argument('-t', '--hashtag', dest='hashtag',
+                                help='The hashtag to tweet to')
+    hashtag_parser.add_argument('-d', '--autonomous', dest='autonomous',
+                                help='Whether to run in autonomous mode.'
+                                ' Incompatible with -t', action='store_true')
     return parser
 
 
@@ -64,13 +72,21 @@ def save_chain(chain, opts):
             pickle.dump(chain, f)
 
 
+def get_hashtag(twitter, opts):
+    '''
+    Figure out a hashtag to use.
+    '''
+    if opts.autonomous:
+        trending = twitter.get_trending(opts.woeid)
+        if not trending:
+            return None
+        return random.choice(trending)
+    return opts.hashtag
+
+
 def main():
     parser = get_argument_parser()
     opts = parser.parse_args()
-    if any([getattr(opts, i) is None for i in
-            ['hashtag', 'app_key', 'app_secret']]):
-        parser.print_usage()
-        return 1
     twitter = Twitter(opts.app_key, opts.app_secret)
     if any([getattr(opts, i) is None for i in
             ['access_token', 'access_secret']]):
@@ -81,7 +97,11 @@ def main():
         print("Your access token is:\nKey: %s\nSecret: %s\n" % (key, secret))
     else:
         twitter.set_access_token(opts.access_token, opts.access_secret)
-    tweets = twitter.search_by_hashtag(opts.hashtag, 10, opts.lang)
+    hashtag = get_hashtag(twitter, opts)
+    if hashtag is None:
+        print('Could not decide on a hashtag. Will now quit')
+        return 1
+    tweets = twitter.search_by_hashtag(hashtag, 10, opts.lang)
     pipeline = build_pipeline()
     tweets = [pipeline.process(tweet) for tweet in tweets]
     chain = get_chain(opts)
@@ -93,7 +113,7 @@ def main():
         if len(' '.join(result)) + len(token) < 140:
             result.append(token)
     tweet = ' '.join(result)
-    # twitter.tweet(tweet)
+    twitter.tweet(tweet)
     print("I Tweeted: %s" % tweet)
     save_chain(chain, opts)
     return 0

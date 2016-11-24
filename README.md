@@ -17,3 +17,6 @@ Once you do have the token, future invocations can be done as:
 ```
 ./hashkov_tweet.py -t <HASHTAG> -a <APP_KEY> -c <APP_SECRET> -k <ACCESS_KEY> -s <ACCESS_SECRET>
 ```
+
+Hashkov also supports autonomous mode. If you pass in `-d` instead of `-t <HASHTAG>` it will randomly tweet
+to a trending hashtag (with the _ prefix so as to not violate the ToS).
